@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
 /** ponytail: degrees of device tilt that sweep the card edge-to-edge. Bump if it feels twitchy. */
 const GYRO_RANGE_DEG = 22;
+
+/** True only on iOS 13+, the one engine that gates orientation behind a gesture. */
+const needsPermission = () =>
+  typeof (window as any).DeviceOrientationEvent?.requestPermission === "function";
 
 /**
  * Tracks pointer position (and, on mobile, device orientation) over an element
@@ -15,6 +19,7 @@ export function useHoloTilt(maxTiltDeg = 14, gyro = true) {
   const elRef = useRef<HTMLDivElement | null>(null);
   const frame = useRef<number | null>(null);
   const pointing = useRef(false);
+  const [permitted, setPermitted] = useState(false);
 
   /** px/py are normalized 0..1 coordinates across the card. */
   const write = useCallback(
@@ -75,6 +80,8 @@ export function useHoloTilt(maxTiltDeg = 14, gyro = true) {
 
   useEffect(() => {
     if (!gyro || typeof window === "undefined" || !("DeviceOrientationEvent" in window)) return;
+    // iOS 13+ withholds events until requestGyro() is granted; every other browser is open.
+    if (needsPermission() && !permitted) return;
     // ponytail: first reading is the neutral hold angle, so it works lying flat or upright
     let base: { beta: number; gamma: number } | null = null;
     const onOrient = (e: DeviceOrientationEvent) => {
@@ -87,14 +94,19 @@ export function useHoloTilt(maxTiltDeg = 14, gyro = true) {
     };
     window.addEventListener("deviceorientation", onOrient);
     return () => window.removeEventListener("deviceorientation", onOrient);
-  }, [gyro, schedule]);
+  }, [gyro, permitted, schedule]);
 
   /** iOS 13+ only hands out orientation after a user gesture asks for it. */
   const requestGyro = useCallback(() => {
-    if (!gyro) return;
-    const ctor = (window as any).DeviceOrientationEvent;
-    if (typeof ctor?.requestPermission === "function") ctor.requestPermission().catch(() => {});
-  }, [gyro]);
+    if (!gyro || permitted || !needsPermission()) return;
+    (window as any).DeviceOrientationEvent.requestPermission()
+      .then((state: string) => {
+        setPermitted(state === "granted");
+        if (state !== "granted") console.warn(`[holo-card] gyro permission ${state}`);
+      })
+      // rejects on an insecure origin - iOS needs https:// (or localhost), not http://192.168.x.x
+      .catch((err: unknown) => console.warn("[holo-card] gyro unavailable, needs HTTPS:", err));
+  }, [gyro, permitted]);
 
   return { elRef, onPointerMove, onPointerLeave, requestGyro };
 }
