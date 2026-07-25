@@ -39,22 +39,13 @@ const CSS = `
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  /* specular hotspot under the pointer + a sheen band that sweeps the other way */
-  background-image:
-    radial-gradient(
-      circle at var(--mx) var(--my),
-      rgba(255, 255, 255, 0.5) 0%,
-      rgba(255, 255, 255, 0.15) 25%,
-      rgba(255, 255, 255, 0) 55%
-    ),
-    linear-gradient(
-      105deg,
-      rgba(255, 255, 255, 0) 42%,
-      rgba(255, 255, 255, 0.16) 50%,
-      rgba(255, 255, 255, 0) 58%
-    );
-  background-size: 100% 100%, 220% 100%;
-  background-position: 0 0, calc(100% - var(--mx)) 0;
+  /* specular hotspot under the pointer only - no sweeping sheen band */
+  background-image: radial-gradient(
+    circle at var(--mx) var(--my),
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.18) 16%,
+    rgba(255, 255, 255, 0) 38%
+  );
   /* ponytail: screen, not overlay - overlay is invisible on light card art */
   mix-blend-mode: screen;
   pointer-events: none;
@@ -75,17 +66,17 @@ const CSS = `
     ),
     linear-gradient(
       115deg,
-      rgba(255, 110, 150, 0.28) 8%,
-      rgba(255, 220, 120, 0.28) 24%,
-      rgba(120, 255, 190, 0.28) 40%,
-      rgba(120, 190, 255, 0.28) 56%,
-      rgba(200, 130, 255, 0.28) 72%,
-      rgba(255, 110, 150, 0.28) 88%
+      rgba(255, 110, 150, 0.5) 8%,
+      rgba(255, 220, 120, 0.5) 24%,
+      rgba(120, 255, 190, 0.5) 40%,
+      rgba(120, 190, 255, 0.5) 56%,
+      rgba(200, 130, 255, 0.5) 72%,
+      rgba(255, 110, 150, 0.5) 88%
     );
   background-size: 160% 160%, 260% 260%;
   background-position: var(--mx) var(--my), calc(100% - var(--mx)) calc(100% - var(--my));
   background-blend-mode: overlay;
-  filter: brightness(0.92) contrast(1.45) saturate(1.5);
+  filter: brightness(1.05) contrast(1.3) saturate(1.7);
   mix-blend-mode: color-dodge;
   pointer-events: none;
   opacity: 0;
@@ -97,7 +88,7 @@ const CSS = `
 }
 .holo-card:hover .holo-card__sparkle,
 .holo-card[data-holo-active] .holo-card__sparkle {
-  opacity: calc(0.35 + var(--distance) * 0.3);
+  opacity: calc(0.6 + var(--distance) * 0.35);
 }
 `;
 

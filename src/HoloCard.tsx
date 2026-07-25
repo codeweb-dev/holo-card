@@ -21,6 +21,8 @@ export interface HoloCardProps {
   showSparkles?: boolean;
   /** Max tilt rotation in degrees at the card's edge. Default 14. */
   maxTilt?: number;
+  /** Tilt with the device gyroscope on mobile. iOS needs one tap to grant it. Default true. */
+  gyro?: boolean;
   /** Alt text for the image. */
   alt?: string;
   className?: string;
@@ -34,6 +36,7 @@ export function HoloCard({
   radius = "md",
   showSparkles = true,
   maxTilt = 14,
+  gyro = true,
   alt = "",
   className,
   style,
@@ -42,7 +45,7 @@ export function HoloCard({
     injectHoloStyles();
   }, []);
 
-  const { elRef, onPointerMove, onPointerLeave } = useHoloTilt(maxTilt);
+  const { elRef, onPointerMove, onPointerLeave, requestGyro } = useHoloTilt(maxTilt, gyro);
 
   return (
     <div
@@ -56,6 +59,7 @@ export function HoloCard({
       }}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
+      onClick={requestGyro}
     >
       <div className="holo-card__inner">
         <img className="holo-card__image" src={url} alt={alt} draggable={false} />
