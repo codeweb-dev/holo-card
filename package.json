@@ -35,6 +35,15 @@
     "tilt"
   ],
   "license": "MIT",
+  "author": "Allen Labrague",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codeweb-dev/holo-card.git"
+  },
+  "homepage": "https://github.com/codeweb-dev/holo-card#readme",
+  "bugs": {
+    "url": "https://github.com/codeweb-dev/holo-card/issues"
+  },
   "devDependencies": {
     "@types/react": "^18.3.0",
     "react": "^18.3.0",
