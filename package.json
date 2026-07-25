@@ -1,0 +1,44 @@
+{
+  "name": "react-holo-card",
+  "version": "0.1.0",
+  "description": "A React component that renders a pointer-reactive holographic card effect (Pokemon-card style foil + glare + sparkle).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "peerDependencies": {
+    "react": ">=17"
+  },
+  "scripts": {
+    "build": "tsup src/index.tsx --format esm --dts --clean --external react",
+    "dev": "tsup src/index.tsx --format esm --dts --watch --external react",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "holo",
+    "card",
+    "effect",
+    "pokemon",
+    "foil",
+    "tilt"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "react": "^18.3.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  }
+}
