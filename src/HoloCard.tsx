@@ -3,6 +3,11 @@ import type { CSSProperties } from "react";
 import { useHoloTilt } from "./useHoloTilt.js";
 import { injectHoloStyles } from "./styles.js";
 
+const RADII = { none: 0, sm: 8, md: 14, lg: 20, xl: 28, full: 9999 } as const;
+
+/** Named corner-radius preset, or a raw px value. */
+export type HoloRadius = keyof typeof RADII | number;
+
 export interface HoloCardProps {
   /** Image URL rendered inside the card. */
   url: string;
@@ -10,6 +15,8 @@ export interface HoloCardProps {
   width?: number;
   /** Card height in px. Default 446. */
   height?: number;
+  /** Corner radius: "none" | "sm" | "md" | "lg" | "xl" | "full", or px. Default "md". */
+  radius?: HoloRadius;
   /** Show the rainbow foil sparkle layer on top of the glare. Default true. */
   showSparkles?: boolean;
   /** Max tilt rotation in degrees at the card's edge. Default 14. */
@@ -24,6 +31,7 @@ export function HoloCard({
   url,
   width = 320,
   height = 446,
+  radius = "md",
   showSparkles = true,
   maxTilt = 14,
   alt = "",
@@ -40,7 +48,12 @@ export function HoloCard({
     <div
       ref={elRef}
       className={["holo-card", className].filter(Boolean).join(" ")}
-      style={{ width, height, ...style }}
+      style={{
+        width,
+        height,
+        borderRadius: typeof radius === "number" ? radius : RADII[radius],
+        ...style,
+      }}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >

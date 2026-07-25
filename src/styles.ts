@@ -39,12 +39,24 @@ const CSS = `
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(
-    circle at var(--mx) var(--my),
-    rgba(255, 255, 255, calc(0.45 * (1 - var(--distance)) + 0.05)) 0%,
-    rgba(255, 255, 255, 0) 60%
-  );
-  mix-blend-mode: overlay;
+  /* specular hotspot under the pointer + a sheen band that sweeps the other way */
+  background-image:
+    radial-gradient(
+      circle at var(--mx) var(--my),
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0.15) 25%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    linear-gradient(
+      105deg,
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0.16) 50%,
+      rgba(255, 255, 255, 0) 58%
+    );
+  background-size: 100% 100%, 220% 100%;
+  background-position: 0 0, calc(100% - var(--mx)) 0;
+  /* ponytail: screen, not overlay - overlay is invisible on light card art */
+  mix-blend-mode: screen;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.4s ease;
@@ -53,26 +65,39 @@ const CSS = `
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background-image: repeating-linear-gradient(
-    115deg,
-    rgba(255, 0, 170, 0.55) 0%,
-    rgba(255, 240, 0, 0.55) 12%,
-    rgba(0, 255, 200, 0.55) 24%,
-    rgba(80, 90, 255, 0.55) 36%,
-    rgba(255, 0, 170, 0.55) 48%
-  );
-  background-size: 300% 300%;
-  background-position: var(--mx) var(--my);
+  /* fine foil grain over a soft rainbow, panned in opposite directions */
+  background-image:
+    repeating-linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.09) 1.2%,
+      rgba(255, 255, 255, 0) 2.6%
+    ),
+    linear-gradient(
+      115deg,
+      rgba(255, 110, 150, 0.28) 8%,
+      rgba(255, 220, 120, 0.28) 24%,
+      rgba(120, 255, 190, 0.28) 40%,
+      rgba(120, 190, 255, 0.28) 56%,
+      rgba(200, 130, 255, 0.28) 72%,
+      rgba(255, 110, 150, 0.28) 88%
+    );
+  background-size: 160% 160%, 260% 260%;
+  background-position: var(--mx) var(--my), calc(100% - var(--mx)) calc(100% - var(--my));
+  background-blend-mode: overlay;
+  filter: brightness(0.92) contrast(1.45) saturate(1.5);
   mix-blend-mode: color-dodge;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.4s ease;
 }
+.holo-card:hover .holo-card__glare,
 .holo-card[data-holo-active] .holo-card__glare {
   opacity: 1;
 }
+.holo-card:hover .holo-card__sparkle,
 .holo-card[data-holo-active] .holo-card__sparkle {
-  opacity: calc(0.28 + var(--distance) * 0.35);
+  opacity: calc(0.35 + var(--distance) * 0.3);
 }
 `;
 
