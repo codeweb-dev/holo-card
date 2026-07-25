@@ -4,7 +4,10 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
 /** ponytail: degrees of device tilt that sweep the card edge-to-edge. Bump if it feels twitchy. */
-const GYRO_RANGE_DEG = 22;
+const GYRO_RANGE_DEG = 28;
+
+/** ponytail: low-pass weight for each new sensor reading. Lower = smoother but laggier. */
+const GYRO_SMOOTHING = 0.12;
 
 /** True only on iOS 13+, the one engine that gates orientation behind a gesture. */
 const needsPermission = () =>
@@ -15,10 +18,11 @@ const needsPermission = () =>
  * and writes the result as CSS custom properties (--rx, --ry, --mx, --my,
  * --distance) directly on the node via the ref, so React never re-renders.
  */
-export function useHoloTilt(maxTiltDeg = 14, gyro = true) {
+export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
   const elRef = useRef<HTMLDivElement | null>(null);
   const frame = useRef<number | null>(null);
   const pointing = useRef(false);
+  const gyroLive = useRef(false);
   const [permitted, setPermitted] = useState(false);
 
   /** px/py are normalized 0..1 coordinates across the card. */
@@ -53,6 +57,8 @@ export function useHoloTilt(maxTiltDeg = 14, gyro = true) {
     (e: ReactPointerEvent<HTMLDivElement>) => {
       const el = elRef.current;
       if (!el) return;
+      // once the gyro is feeding, a dragging finger just fights it - let the sensor win
+      if (gyroLive.current && e.pointerType !== "mouse") return;
       const rect = el.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
       pointing.current = true;
@@ -84,16 +90,29 @@ export function useHoloTilt(maxTiltDeg = 14, gyro = true) {
     if (needsPermission() && !permitted) return;
     // ponytail: first reading is the neutral hold angle, so it works lying flat or upright
     let base: { beta: number; gamma: number } | null = null;
+    let smooth: { beta: number; gamma: number } | null = null;
     const onOrient = (e: DeviceOrientationEvent) => {
-      if (pointing.current || e.beta == null || e.gamma == null) return;
+      if (e.beta == null || e.gamma == null) return;
+      gyroLive.current = true;
+      if (pointing.current) return;
       if (!base) base = { beta: e.beta, gamma: e.gamma };
+      // raw sensor readings jitter a few degrees at rest; low-pass them before tilting
+      smooth = smooth
+        ? {
+            beta: smooth.beta + (e.beta - smooth.beta) * GYRO_SMOOTHING,
+            gamma: smooth.gamma + (e.gamma - smooth.gamma) * GYRO_SMOOTHING,
+          }
+        : { beta: e.beta, gamma: e.gamma };
       schedule(
-        0.5 + clamp((e.gamma - base.gamma) / (GYRO_RANGE_DEG * 2), -0.5, 0.5),
-        0.5 + clamp((e.beta - base.beta) / (GYRO_RANGE_DEG * 2), -0.5, 0.5)
+        0.5 + clamp((smooth.gamma - base.gamma) / (GYRO_RANGE_DEG * 2), -0.5, 0.5),
+        0.5 + clamp((smooth.beta - base.beta) / (GYRO_RANGE_DEG * 2), -0.5, 0.5)
       );
     };
     window.addEventListener("deviceorientation", onOrient);
-    return () => window.removeEventListener("deviceorientation", onOrient);
+    return () => {
+      gyroLive.current = false;
+      window.removeEventListener("deviceorientation", onOrient);
+    };
   }, [gyro, permitted, schedule]);
 
   /** iOS 13+ only hands out orientation after a user gesture asks for it. */

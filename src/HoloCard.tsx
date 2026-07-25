@@ -19,7 +19,7 @@ export interface HoloCardProps {
   radius?: HoloRadius;
   /** Show the rainbow foil sparkle layer on top of the glare. Default true. */
   showSparkles?: boolean;
-  /** Max tilt rotation in degrees at the card's edge. Default 14. */
+  /** Max tilt rotation in degrees at the card's edge. Default 30. */
   maxTilt?: number;
   /** Tilt with the device gyroscope on mobile. iOS needs one tap to grant it. Default true. */
   gyro?: boolean;
@@ -35,7 +35,7 @@ export function HoloCard({
   height = 446,
   radius = "md",
   showSparkles = true,
-  maxTilt = 14,
+  maxTilt = 30,
   gyro = true,
   alt = "",
   className,

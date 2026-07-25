@@ -23,7 +23,7 @@ import { HoloCard } from "react-holo-card";
   height={446}        // optional, default 446
   radius="md"         // optional, "none" | "sm" | "md" | "lg" | "xl" | "full" | px number
   showSparkles={true} // optional, default true
-  maxTilt={14}         // optional, max rotation in degrees, default 14
+  maxTilt={30}         // optional, max rotation in degrees, default 30
   gyro={true}         // optional, tilt with the device gyroscope on mobile, default true
   alt="Card art"
 />
@@ -57,7 +57,7 @@ import { HoloCard } from "react-holo-card";
 | `height`       | `number`  | `446`   | Card height in px                         |
 | `radius`       | `"none" \| "sm" \| "md" \| "lg" \| "xl" \| "full" \| number` | `"md"` | Corner radius — presets are 0/8/14/20/28/9999px, or pass px |
 | `showSparkles` | `boolean` | `true`  | Show the rainbow foil sparkle layer       |
-| `maxTilt`      | `number`  | `14`    | Max tilt rotation in degrees at the edge  |
+| `maxTilt`      | `number`  | `30`    | Max tilt rotation in degrees at the edge  |
 | `gyro`         | `boolean` | `true`  | Tilt with the device gyroscope on mobile. iOS 13+ only grants orientation after a user gesture — the first tap on the card asks for it. Needs HTTPS. |
 | `alt`          | `string`  | `""`    | Alt text for the image                    |
 | `className`    | `string`  | —       | Extra class on the root element           |
