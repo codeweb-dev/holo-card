@@ -3,11 +3,38 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
-/** ponytail: degrees of device tilt that sweep the card edge-to-edge. Bump if it feels twitchy. */
+/** ponytail: degrees of device pitch that sweep the card top-to-bottom. Bump if it feels twitchy. */
 const GYRO_RANGE_DEG = 28;
+
+/**
+ * ponytail: same knob for left/right. Smaller because rolling a phone you are
+ * holding upright barely changes where it faces - the geometry scales roll by
+ * cos(beta), so it needs a tighter range to feel equal to pitch.
+ */
+const GYRO_ROLL_RANGE_DEG = 14;
 
 /** ponytail: low-pass weight for each new sensor reading. Lower = smoother but laggier. */
 const GYRO_SMOOTHING = 0.12;
+
+const DEG = Math.PI / 180;
+
+/**
+ * Which way the phone is leaning, in degrees, as the direction gravity pulls
+ * across the screen: x is the right edge dipping, y is the top edge dipping.
+ *
+ * Derived from the gravity vector rather than beta/gamma directly. Near-vertical
+ * (beta ~= 90, i.e. how anyone actually holds a phone) gamma gimbal-locks and
+ * flips sign on a tiny roll, which sent the tilt the wrong way. cos(beta)sin(gamma)
+ * stays continuous through that pose.
+ */
+export function leanFromOrientation(beta: number, gamma: number) {
+  const b = beta * DEG;
+  const g = gamma * DEG;
+  return {
+    x: Math.asin(clamp(Math.cos(b) * Math.sin(g), -1, 1)) / DEG,
+    y: Math.asin(clamp(-Math.sin(b), -1, 1)) / DEG,
+  };
+}
 
 /** True only on iOS 13+, the one engine that gates orientation behind a gesture. */
 const needsPermission = () =>
@@ -89,23 +116,24 @@ export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
     // iOS 13+ withholds events until requestGyro() is granted; every other browser is open.
     if (needsPermission() && !permitted) return;
     // ponytail: first reading is the neutral hold angle, so it works lying flat or upright
-    let base: { beta: number; gamma: number } | null = null;
-    let smooth: { beta: number; gamma: number } | null = null;
+    let base: { x: number; y: number } | null = null;
+    let smooth: { x: number; y: number } | null = null;
     const onOrient = (e: DeviceOrientationEvent) => {
       if (e.beta == null || e.gamma == null) return;
       gyroLive.current = true;
       if (pointing.current) return;
-      if (!base) base = { beta: e.beta, gamma: e.gamma };
+      const lean = leanFromOrientation(e.beta, e.gamma);
+      if (!base) base = lean;
       // raw sensor readings jitter a few degrees at rest; low-pass them before tilting
       smooth = smooth
         ? {
-            beta: smooth.beta + (e.beta - smooth.beta) * GYRO_SMOOTHING,
-            gamma: smooth.gamma + (e.gamma - smooth.gamma) * GYRO_SMOOTHING,
+            x: smooth.x + (lean.x - smooth.x) * GYRO_SMOOTHING,
+            y: smooth.y + (lean.y - smooth.y) * GYRO_SMOOTHING,
           }
-        : { beta: e.beta, gamma: e.gamma };
+        : lean;
       schedule(
-        0.5 + clamp((smooth.gamma - base.gamma) / (GYRO_RANGE_DEG * 2), -0.5, 0.5),
-        0.5 + clamp((smooth.beta - base.beta) / (GYRO_RANGE_DEG * 2), -0.5, 0.5)
+        0.5 + clamp((smooth.x - base.x) / (GYRO_ROLL_RANGE_DEG * 2), -0.5, 0.5),
+        0.5 + clamp((smooth.y - base.y) / (GYRO_RANGE_DEG * 2), -0.5, 0.5)
       );
     };
     window.addEventListener("deviceorientation", onOrient);

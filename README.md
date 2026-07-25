@@ -63,6 +63,28 @@ import { HoloCard } from "react-holo-card";
 | `className`    | `string`  | —       | Extra class on the root element           |
 | `style`        | `object`  | —       | Extra inline styles on the root element   |
 
+## Gyro on mobile
+
+Android and desktop browsers hand out `deviceorientation` freely. iOS 13+ does
+not: it withholds motion data until a user gesture asks for permission, and
+only over HTTPS (`localhost` counts, a `http://192.168.x.x` dev server does
+not). The card asks on its own first click, so tapping the art is enough.
+
+**Recommended:** give mobile users a visible button as well, so they know the
+permission exists instead of tapping around hoping. Forward the click to the
+card and iOS treats it as the same gesture:
+
+```jsx
+const stage = useRef(null);
+
+<div ref={stage}>
+  <HoloCard url="/card.png" />
+</div>
+<button onClick={() => stage.current.querySelector(".holo-card").click()}>
+  Enable motion tilt
+</button>
+```
+
 ## Build locally
 
 ```

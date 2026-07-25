@@ -22,7 +22,7 @@
   "scripts": {
     "build": "tsup src/index.tsx --format esm --dts --clean --external react",
     "dev": "tsup src/index.tsx --format esm --dts --watch --external react",
-    "test": "node --test test/*.test.js",
+    "test": "node --experimental-strip-types --test test/*.test.js",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

@@ -24,7 +24,8 @@ const CSS = `
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 .holo-card[data-holo-active] .holo-card__inner {
-  transition: transform 0.05s linear;
+  /* long enough that a dropped gyro frame gets interpolated instead of stepping */
+  transition: transform 0.1s linear;
 }
 .holo-card__image {
   display: block;
