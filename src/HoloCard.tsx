@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
+import Tilt from "react-parallax-tilt";
 import { useHoloTilt } from "./useHoloTilt.js";
 import { injectHoloStyles } from "./styles.js";
 
@@ -21,6 +22,12 @@ export interface HoloCardProps {
   showSparkles?: boolean;
   /** Max tilt rotation in degrees at the card's edge. Default 30. */
   maxTilt?: number;
+  /** Scale the card while the pointer is over it. Default 1.04. */
+  scale?: number;
+  /** Perspective depth in px — lower is a more extreme 3D. Default 1200. */
+  perspective?: number;
+  /** Ease-back duration in ms when the pointer leaves. Default 400. */
+  transitionSpeed?: number;
   /** Tilt with the device gyroscope on mobile. iOS needs one tap to grant it. Default true. */
   gyro?: boolean;
   /** Alt text for the image. */
@@ -36,6 +43,9 @@ export function HoloCard({
   radius = "md",
   showSparkles = true,
   maxTilt = 30,
+  scale = 1.04,
+  perspective = 1200,
+  transitionSpeed = 400,
   gyro = true,
   alt = "",
   className,
@@ -45,27 +55,44 @@ export function HoloCard({
     injectHoloStyles();
   }, []);
 
-  const { elRef, onPointerMove, onPointerLeave, requestGyro } = useHoloTilt(maxTilt, gyro);
+  const { elRef, onPointerMove, onPointerLeave, requestGyro, gyroLive } = useHoloTilt(
+    maxTilt,
+    gyro
+  );
 
   return (
-    <div
-      ref={elRef}
-      className={["holo-card", className].filter(Boolean).join(" ")}
-      style={{
-        width,
-        height,
-        borderRadius: typeof radius === "number" ? radius : RADII[radius],
-        ...style,
-      }}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
-      onClick={requestGyro}
+    <Tilt
+      className="holo-card__tilt"
+      style={{ width, height }}
+      tiltMaxAngleX={maxTilt}
+      tiltMaxAngleY={maxTilt}
+      scale={scale}
+      perspective={perspective}
+      transitionSpeed={transitionSpeed}
+      // its glare is a flat white sheen; .holo-card__glare is the pointer-tracking one
+      glareEnable={false}
+      // its gyro reads raw beta/gamma and never asks iOS for permission - useHoloTilt does both
+      gyroscope={false}
+      // once the sensor is driving, a dragging finger would fight it
+      tiltEnable={!gyroLive}
     >
-      <div className="holo-card__inner">
-        <img className="holo-card__image" src={url} alt={alt} draggable={false} />
-        <div className="holo-card__glare" />
-        {showSparkles && <div className="holo-card__sparkle" />}
+      <div
+        ref={elRef}
+        className={["holo-card", className].filter(Boolean).join(" ")}
+        style={{
+          borderRadius: typeof radius === "number" ? radius : RADII[radius],
+          ...style,
+        }}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
+        onClick={requestGyro}
+      >
+        <div className="holo-card__inner">
+          <img className="holo-card__image" src={url} alt={alt} draggable={false} />
+          <div className="holo-card__glare" />
+          {showSparkles && <div className="holo-card__sparkle" />}
+        </div>
       </div>
-    </div>
+    </Tilt>
   );
 }

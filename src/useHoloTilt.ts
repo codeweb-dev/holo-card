@@ -44,22 +44,27 @@ const needsPermission = () =>
  * Tracks pointer position (and, on mobile, device orientation) over an element
  * and writes the result as CSS custom properties (--rx, --ry, --mx, --my,
  * --distance) directly on the node via the ref, so React never re-renders.
+ *
+ * react-parallax-tilt owns the 3D transform for pointer input, so --rx/--ry are
+ * only driven by the gyroscope - which the library reads too crudely to use
+ * (raw beta/gamma, no baseline, and no iOS permission prompt at all).
  */
 export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
   const elRef = useRef<HTMLDivElement | null>(null);
   const frame = useRef<number | null>(null);
   const pointing = useRef(false);
-  const gyroLive = useRef(false);
   const [permitted, setPermitted] = useState(false);
+  // state, not a ref: <Tilt> has to stop tracking touch once the sensor takes over
+  const [gyroLive, setGyroLive] = useState(false);
 
   /** px/py are normalized 0..1 coordinates across the card. */
   const write = useCallback(
-    (px: number, py: number) => {
+    (px: number, py: number, tilt: boolean) => {
       const el = elRef.current;
       if (!el) return;
 
-      const rx = (0.5 - py) * maxTiltDeg;
-      const ry = (px - 0.5) * maxTiltDeg;
+      const rx = tilt ? (0.5 - py) * maxTiltDeg : 0;
+      const ry = tilt ? (px - 0.5) * maxTiltDeg : 0;
       const dx = (px - 0.5) * 2;
       const dy = (py - 0.5) * 2;
       const distance = clamp(Math.sqrt(dx * dx + dy * dy), 0, 1);
@@ -75,9 +80,9 @@ export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
     [maxTiltDeg]
   );
 
-  const schedule = useCallback((px: number, py: number) => {
+  const schedule = useCallback((px: number, py: number, tilt: boolean) => {
     if (frame.current !== null) cancelAnimationFrame(frame.current);
-    frame.current = requestAnimationFrame(() => write(px, py));
+    frame.current = requestAnimationFrame(() => write(px, py, tilt));
   }, [write]);
 
   const onPointerMove = useCallback(
@@ -85,16 +90,18 @@ export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
       const el = elRef.current;
       if (!el) return;
       // once the gyro is feeding, a dragging finger just fights it - let the sensor win
-      if (gyroLive.current && e.pointerType !== "mouse") return;
+      if (gyroLive && e.pointerType !== "mouse") return;
       const rect = el.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
       pointing.current = true;
+      // <Tilt> is already rotating the wrapper from this same pointer - glare only
       schedule(
         clamp((e.clientX - rect.left) / rect.width, 0, 1),
-        clamp((e.clientY - rect.top) / rect.height, 0, 1)
+        clamp((e.clientY - rect.top) / rect.height, 0, 1),
+        false
       );
     },
-    [schedule]
+    [schedule, gyroLive]
   );
 
   const onPointerLeave = useCallback(() => {
@@ -120,7 +127,7 @@ export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
     let smooth: { x: number; y: number } | null = null;
     const onOrient = (e: DeviceOrientationEvent) => {
       if (e.beta == null || e.gamma == null) return;
-      gyroLive.current = true;
+      setGyroLive(true);
       if (pointing.current) return;
       const lean = leanFromOrientation(e.beta, e.gamma);
       if (!base) base = lean;
@@ -133,12 +140,13 @@ export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
         : lean;
       schedule(
         0.5 + clamp((smooth.x - base.x) / (GYRO_ROLL_RANGE_DEG * 2), -0.5, 0.5),
-        0.5 + clamp((smooth.y - base.y) / (GYRO_RANGE_DEG * 2), -0.5, 0.5)
+        0.5 + clamp((smooth.y - base.y) / (GYRO_RANGE_DEG * 2), -0.5, 0.5),
+        true
       );
     };
     window.addEventListener("deviceorientation", onOrient);
     return () => {
-      gyroLive.current = false;
+      setGyroLive(false);
       window.removeEventListener("deviceorientation", onOrient);
     };
   }, [gyro, permitted, schedule]);
@@ -155,5 +163,5 @@ export function useHoloTilt(maxTiltDeg = 30, gyro = true) {
       .catch((err: unknown) => console.warn("[holo-card] gyro unavailable, needs HTTPS:", err));
   }, [gyro, permitted]);
 
-  return { elRef, onPointerMove, onPointerLeave, requestGyro };
+  return { elRef, onPointerMove, onPointerLeave, requestGyro, gyroLive };
 }

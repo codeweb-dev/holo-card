@@ -1,6 +1,9 @@
 let injected = false;
 
 const CSS = `
+/* react-parallax-tilt's wrapper owns the pointer-driven transform and the sizing.
+   Deliberately no transform-style: preserve-3d here - it flattens the child's
+   overflow clip and mix-blend-mode, and Tilt's rotation is one matrix3d anyway. */
 .holo-card {
   --rx: 0deg;
   --ry: 0deg;
@@ -8,6 +11,9 @@ const CSS = `
   --my: 50%;
   --distance: 0;
   position: relative;
+  width: 100%;
+  height: 100%;
+  /* only the gyro rotates .holo-card__inner; <Tilt> sets its own for the pointer */
   perspective: 1200px;
   border-radius: 14px;
   isolation: isolate;
